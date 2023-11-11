@@ -1,3 +1,5 @@
-add_subdirectory(helloworld)
+#add_subdirectory(helloworld)
 
-add_subdirectory(atividade1)
+#add_subdirectory(lookat)
+
+add_subdirectory(carrossel)
