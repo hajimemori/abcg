@@ -69,9 +69,13 @@ void Window::onCreate() {
   m_modelMatrixLocation = abcg::glGetUniformLocation(m_program, "modelMatrix");
   m_colorLocation = abcg::glGetUniformLocation(m_program, "color");
 
+// Inicializing variables
   m_angle = 0.0;
   m_height = 0.0;
   m_upping = true;
+  m_maxHeight = 0.5;
+  m_uppingScale = 0.5;
+  m_rotateSpeed = 0.05;
 
   // Load model
   loadModelFromFile(assetsPath + "bunny.obj");
@@ -184,12 +188,12 @@ void Window::onPaint() {
   // Draw white bunny
   glm::mat4 model{1.0f};
 
-  m_angle = m_angle + 0.001; 
+  m_angle = m_angle + (m_rotateSpeed / 100); 
   float raio = 1;
   float x = raio * cos(m_angle);
-  float y = raio * sin(m_angle);
+  float z = raio * sin(m_angle);
 
-  if(m_height > 0.5){
+  if(m_height > m_maxHeight){
     m_upping = false;
   }
   if(m_height <= 0){
@@ -197,18 +201,16 @@ void Window::onPaint() {
   }
 
   if(m_upping){
-    m_height += 0.0006;
+    m_height += (m_uppingScale / 1000);
   }
   else{
-    m_height -= 0.0006;
+    m_height -= (m_uppingScale / 1000);
   }
-
  
- 
-  model = glm::translate(model, glm::vec3(x, m_height, y));
+  model = glm::translate(model, glm::vec3(x, m_height, z));
 
 
-  model = glm::rotate(model, atan2f(x,y), glm::vec3(0, 1, 0));
+  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 1, 0));
 
 
   model = glm::scale(model, glm::vec3(0.5f));
@@ -227,7 +229,33 @@ void Window::onPaint() {
   abcg::glUseProgram(0);
 }
 
-void Window::onPaintUI() { abcg::OpenGLWindow::onPaintUI(); }
+void Window::onPaintUI() { 
+  abcg::OpenGLWindow::onPaintUI(); 
+  {
+    auto const widgetSize{ImVec2(330, 100)};
+    ImGui::SetNextWindowPos(ImVec2(m_viewportSize.x - widgetSize.x - 5,
+                                   m_viewportSize.y - widgetSize.y - 5));
+    ImGui::SetNextWindowSize(widgetSize);
+    auto const windowFlags{ImGuiWindowFlags_NoResize |
+                           ImGuiWindowFlags_NoCollapse |
+                           ImGuiWindowFlags_NoTitleBar};
+    ImGui::Begin(" ", nullptr, windowFlags);
+
+    ImGui::PushItemWidth(140);
+    ImGui::SliderFloat("Velocidade de subida", &m_uppingScale, 0.1, 1.0 , "%f" );
+    ImGui::PopItemWidth();
+
+    ImGui::PushItemWidth(140);
+    ImGui::SliderFloat("Altura maxima", &m_maxHeight, 0.0, 1.0 , "%f" );
+    ImGui::PopItemWidth();
+
+    ImGui::PushItemWidth(140);
+    ImGui::SliderFloat("Velocidade de rotacao", &m_rotateSpeed, 0.01, 0.10 , "%f" );
+    ImGui::PopItemWidth();
+
+    ImGui::End();
+  }
+ }
 
 void Window::onResize(glm::ivec2 const &size) {
   m_viewportSize = size;

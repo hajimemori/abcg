@@ -41,6 +41,9 @@ private:
   float m_panSpeed{};
   float m_angle{};
   float m_height{};
+  float m_maxHeight{};
+  float m_uppingScale{};
+  float m_rotateSpeed{};
   bool m_upping{};
 
   Ground m_ground;
