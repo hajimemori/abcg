@@ -146,3 +146,4 @@ if (z < -m_raio || z > m_raio || x > m_raio || x < - m_raio){
 ## Grupo
 
 11043111 - Clayton de Oliveira
+21045116 - Rafael Hajime Mori
