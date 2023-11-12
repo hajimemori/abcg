@@ -56,9 +56,9 @@ void Window::onCreate() {
 
   // Create program
   m_program =
-      abcg::createOpenGLProgram({{.source = assetsPath + "lookat.vert",
+      abcg::createOpenGLProgram({{.source = assetsPath + "carrossel.vert",
                                   .stage = abcg::ShaderStage::Vertex},
-                                 {.source = assetsPath + "lookat.frag",
+                                 {.source = assetsPath + "carrossel.frag",
                                   .stage = abcg::ShaderStage::Fragment}});
 
   m_ground.create(m_program);
@@ -188,7 +188,7 @@ void Window::onPaint() {
   // Draw white bunny
   glm::mat4 model{1.0f};
 
-  m_angle = m_angle + (m_rotateSpeed / 100); 
+  m_angle = m_angle + (m_rotateSpeed / 100);
   float raio = 1;
   float x = raio * cos(m_angle);
   float z = raio * sin(m_angle);
@@ -200,18 +200,18 @@ void Window::onPaint() {
     m_upping = true;
   }
 
+
   if(m_upping){
     m_height += (m_uppingScale / 1000);
   }
   else{
     m_height -= (m_uppingScale / 1000);
   }
- 
+
+
   model = glm::translate(model, glm::vec3(x, m_height, z));
 
-
   model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 1, 0));
-
 
   model = glm::scale(model, glm::vec3(0.5f));
 
@@ -229,8 +229,8 @@ void Window::onPaint() {
   abcg::glUseProgram(0);
 }
 
-void Window::onPaintUI() { 
-  abcg::OpenGLWindow::onPaintUI(); 
+void Window::onPaintUI() {
+  abcg::OpenGLWindow::onPaintUI();
   {
     auto const widgetSize{ImVec2(330, 100)};
     ImGui::SetNextWindowPos(ImVec2(m_viewportSize.x - widgetSize.x - 5,
