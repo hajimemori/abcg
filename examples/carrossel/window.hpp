@@ -44,6 +44,7 @@ private:
   float m_maxHeight{};
   float m_uppingScale{};
   float m_rotateSpeed{};
+  float m_raio{};
   bool m_upping{};
 
   Ground m_ground;
