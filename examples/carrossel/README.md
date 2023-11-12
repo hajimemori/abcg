@@ -141,3 +141,8 @@ if (z < -m_raio || z > m_raio || x > m_raio || x < - m_raio){
   abcg::glUniform4f(m_colorLoc, 0.5f, 0.5f, 0.5f, 1.0f); // Cinza
 }
 ```
+
+
+## Grupo
+
+11043111 - Clayton de Oliveira
