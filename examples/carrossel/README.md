@@ -1,5 +1,12 @@
 # Carrossel
 
+## Grupo
+
+* 11043111 - Clayton de Oliveira
+* 21045116 - Rafael Hajime Mori
+
+## Descrição 
+
 Este projeto foi baseado na atividade LookAt e tem como principal objetivo a simulação de um brinquedo infantil conhecido como Carrossel.
 O brinquedo consiste repetidos modelos que giram em circulos por um circuito sobe e desce de forma uniforme até uma altura máxima.
 
@@ -143,7 +150,3 @@ if (z < -m_raio || z > m_raio || x > m_raio || x < - m_raio){
 ```
 
 
-## Grupo
-
-11043111 - Clayton de Oliveira
-21045116 - Rafael Hajime Mori
