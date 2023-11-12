@@ -77,9 +77,10 @@ void Window::onCreate() {
   m_uppingScale = 0.5;
   m_rotateSpeed = 0.05;
   m_raio = 1.0;
+  m_angle_increase = 60.0f;
 
   // Load model
-  loadModelFromFile(assetsPath + "bunny.obj");
+  loadModelFromFile(assetsPath + "horse.obj");
 
   // Generate VBO
   abcg::glGenBuffers(1, &m_VBO);
@@ -186,12 +187,6 @@ void Window::onPaint() {
 
   abcg::glBindVertexArray(m_VAO);
 
-  // Draw white bunny
-  glm::mat4 model{1.0f};
-
-  m_angle = m_angle + (m_rotateSpeed / 100);
-  float x = m_raio * cos(m_angle);
-  float z = m_raio * sin(m_angle);
 
   if(m_height > m_maxHeight){
     m_upping = false;
@@ -200,7 +195,6 @@ void Window::onPaint() {
     m_upping = true;
   }
 
-
   if(m_upping){
     m_height += (m_uppingScale / 1000);
   }
@@ -208,18 +202,107 @@ void Window::onPaint() {
     m_height -= (m_uppingScale / 1000);
   }
 
+  // Draw white horse
+  m_angle = m_angle + (m_rotateSpeed / 100);
+  float x = m_raio * cos(m_angle);
+  float z = m_raio * sin(m_angle);
 
+  glm::mat4 model{1.0f};
+  model = glm::mat4(1.0);
   model = glm::translate(model, glm::vec3(x, m_height, z));
-
-  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 1, 0));
-
-  model = glm::scale(model, glm::vec3(0.5f));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
+  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
+  model = glm::scale(model, glm::vec3(0.01f));
 
   abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
   abcg::glUniform4f(m_colorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT,
-                       nullptr);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
 
+
+  // Draw pink horse
+  float m_angle2 = m_angle + glm::radians(m_angle_increase) + (m_rotateSpeed / 100);
+  x = m_raio * cos(m_angle2);
+  z = m_raio * sin(m_angle2);
+
+  model = glm::mat4(1.0);
+  model = glm::translate(model, glm::vec3(x, m_height, z));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
+  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
+  model = glm::scale(model, glm::vec3(0.01f));
+
+  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+  abcg::glUniform4f(m_colorLocation, 1.0f, 0.0f, 0.682f, 1.0f);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+
+
+  // Draw yellow horse
+  float m_angle3 = m_angle + glm::radians(2*m_angle_increase) + (m_rotateSpeed / 100);
+  x = m_raio * cos(m_angle3);
+  z = m_raio * sin(m_angle3);
+
+  model = glm::mat4(1.0);
+  model = glm::translate(model, glm::vec3(x, m_height, z));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
+  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
+  model = glm::scale(model, glm::vec3(0.01f));
+
+  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+  abcg::glUniform4f(m_colorLocation, 1.0f, 0.984f, 0.0f, 1.0f);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+
+
+  // Draw purple horse
+  float m_angle4 = m_angle + glm::radians(3*m_angle_increase) + (m_rotateSpeed / 100);
+  x = m_raio * cos(m_angle4);
+  z = m_raio * sin(m_angle4);
+
+  model = glm::mat4(1.0);
+  model = glm::translate(model, glm::vec3(x, m_height, z));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
+  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
+  model = glm::scale(model, glm::vec3(0.01f));
+
+  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+  abcg::glUniform4f(m_colorLocation, 0.643f, 0.0f, 1.0f, 1.0f);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+
+
+  // Draw blue horse
+  float m_angle5 = m_angle + glm::radians(4*m_angle_increase) + (m_rotateSpeed / 100);
+  x = m_raio * cos(m_angle5);
+  z = m_raio * sin(m_angle5);
+
+  model = glm::mat4(1.0);
+  model = glm::translate(model, glm::vec3(x, m_height, z));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
+  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
+  model = glm::scale(model, glm::vec3(0.01f));
+
+  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+  abcg::glUniform4f(m_colorLocation, 0.0f, 0.482f, 1.0f, 1.0f);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+
+
+  // Draw orange horse
+  float m_angle6 = m_angle + glm::radians(5*m_angle_increase) + (m_rotateSpeed / 100);
+  x = m_raio * cos(m_angle6);
+  z = m_raio * sin(m_angle6);
+
+  model = glm::mat4(1.0);
+  model = glm::translate(model, glm::vec3(x, m_height, z));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
+  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
+  model = glm::scale(model, glm::vec3(0.01f));
+
+  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+  abcg::glUniform4f(m_colorLocation, 1.0f, 0.486f, 0.0f, 1.0f);
+  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT,  nullptr);
 
   abcg::glBindVertexArray(0);
 

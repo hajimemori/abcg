@@ -40,6 +40,7 @@ private:
   float m_truckSpeed{};
   float m_panSpeed{};
   float m_angle{};
+  float m_angle_increase{};
   float m_height{};
   float m_maxHeight{};
   float m_uppingScale{};

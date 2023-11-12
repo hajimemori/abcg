@@ -1,15 +1,15 @@
 # Carrossel
 
-Este projeto foi baseado na atividade LookAt e tem como principal objetivo a simulação de um brinquedo infantil conhecido como Carrossel. 
-O brinquedo consiste em um objeto que gira em circulos por um circuito sobe e desce de forma uniforme até uma altura máxima.
+Este projeto foi baseado na atividade LookAt e tem como principal objetivo a simulação de um brinquedo infantil conhecido como Carrossel.
+O brinquedo consiste repetidos modelos que giram em circulos por um circuito sobe e desce de forma uniforme até uma altura máxima.
 
 ***
 ## Alteração dinamica de variáveis
 
-Criamos alterações para que algumas variáveis sejam possíveis de serem alteradas conforme a vontade do usuário. Para isso utilizamos um Slider na função onPaintUI() e a função ficou da seguinte forma: 
+Criamos alterações para que algumas variáveis sejam possíveis de serem alteradas conforme a vontade do usuário. Para isso utilizamos um Slider na função onPaintUI() e a função ficou da seguinte forma:
 ```
-void Window::onPaintUI() { 
-  abcg::OpenGLWindow::onPaintUI(); 
+void Window::onPaintUI() {
+  abcg::OpenGLWindow::onPaintUI();
   {
     auto const widgetSize{ImVec2(330, 120)};
     ImGui::SetNextWindowPos(ImVec2(m_viewportSize.x - widgetSize.x - 5,
@@ -49,7 +49,7 @@ Neste cógido temos alguns Sliders. O primeiro é o seguinte:
 ```
 E nesse Slide controlamos a variável m_uppingScale que é utilizada para controlar a velocida do movimento vertical realizado pelo modelo. Podemos notar tambem, que para fins de facilitar o valor desta variável para o usuário, em todos os momentos em que é utilizado esta variável dividimos o valor por 1000.
 
-Em seguida temos o seguinte Slider: 
+Em seguida temos o seguinte Slider:
 ```
     ImGui::PushItemWidth(140);
     ImGui::SliderFloat("Altura maxima", &m_maxHeight, 0.0, 1.0 , "%f" );
@@ -57,7 +57,7 @@ Em seguida temos o seguinte Slider:
 ```
 No qual podemos controlar a altura máxima da movimentação vertical do modelo.
 
-O proximo Slider é utilizado para controlar a velocidade de rotação horizontal do modelo. Podemos notar que, assim como a variável de velocidade vertical do modelo, a fim melhorar a usabilidade do usuário, o seu valor tambem é divido por 100 antes de sua utilização e seu código esta descrito como: 
+O proximo Slider é utilizado para controlar a velocidade de rotação horizontal do modelo. Podemos notar que, assim como a variável de velocidade vertical do modelo, a fim melhorar a usabilidade do usuário, o seu valor tambem é divido por 100 antes de sua utilização e seu código esta descrito como:
 
 ```
     ImGui::PushItemWidth(140);
@@ -75,14 +75,16 @@ E por fim temos o Slider que controla a variável de raio de rotação do modelo
 
 
 
-## Movimentação circular do modelo 
+## Movimentação circular do modelo
 
-Para realizar a movimentação do modelo utilizamos uma função baseado em seno e cosseno para encontrar a posição de x e y com base no angulo em que o modelo está: 
+Para realizar a movimentação do modelo utilizamos uma função baseado em seno e cosseno para encontrar a posição de x e y com base no angulo em que o modelo está:
 
 * x = raio * cos(angulo)
 * y = raio * seno(angulo)
 
-Para isto, em código, alteramos na função onPaint() para realizar as equações acima e gravar em variaveis que serão passadas como parametro na função glm::translate: 
+Para cada modelo desenhado na cena o angulo inicial é acrescido em 60˚, como são 6 modelos temos os 360˚ preenchidos.
+
+Para isto, em código, alteramos na função onPaint() para realizar as equações acima e gravar em variaveis que serão passadas como parametro na função glm::translate:
 
 ```
   float x = m_raio * cos(m_angle);
@@ -91,7 +93,7 @@ Para isto, em código, alteramos na função onPaint() para realizar as equaçõ
   .
   .
   .
-  
+
   model = glm::translate(model, glm::vec3(x, m_height, z));
   ```
 
@@ -113,7 +115,7 @@ if(m_height > m_maxHeight){
   else{
     m_height -= (m_uppingScale / 1000);
   }
- 
+
   model = glm::translate(model, glm::vec3(x, m_height, z));
 
 ```
@@ -123,5 +125,19 @@ if(m_height > m_maxHeight){
 Para dar a impressão de um carrossel, devemos fazer uma rotação do modelo em torno do proprio eixo para que ele sempre esteja apontando para frente enquanto realiza a rotação do carrossel. Para isso utilizamos a função de arco tangente já existente no c++, e passamos como parametro da funçao glm::rotate do modelo utilizando o código abaixo:
 
 ```
-model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 1, 0));
+model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
+model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
+```
+
+## Desenho do chão
+
+Para dar um efeito de base para o carrossel, o chão é colorido de cinza com o tamanho suficiente para comportar o raio de rotacao, a demais área foi colorida de verde para um efeito de grama.
+
+```
+if (z < -m_raio || z > m_raio || x > m_raio || x < - m_raio){
+  abcg::glUniform4f(m_colorLoc,  0.047, 0.502, 0.082, 1.0f); // Verde
+}else{
+  abcg::glUniform4f(m_colorLoc, 0.5f, 0.5f, 0.5f, 1.0f); // Cinza
+}
 ```

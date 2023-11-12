@@ -34,9 +34,7 @@ void Ground::create(GLuint program) {
 void Ground::paint(float m_raio) {
   abcg::glBindVertexArray(m_VAO);
 
-  // Draw a grid of 2N+1 x 2N+1 tiles on the xz plane, centered around the
-  // origin
-  auto const N{5};
+  auto const N{3};
   for (auto const z : iter::range(-N, N + 1)) {
     for (auto const x : iter::range(-N, N + 1)) {
       // Set model matrix as a translation matrix
@@ -45,9 +43,9 @@ void Ground::paint(float m_raio) {
       abcg::glUniformMatrix4fv(m_modelMatrixLoc, 1, GL_FALSE, &model[0][0]);
 
       if (z < -m_raio || z > m_raio || x > m_raio || x < - m_raio){
-        abcg::glUniform4f(m_colorLoc,  0.212, 0.416, 0.922, 1.0f); // Azul
+        abcg::glUniform4f(m_colorLoc,  0.047, 0.502, 0.082, 1.0f); // Verde
       }else{
-        abcg::glUniform4f(m_colorLoc, 0.047, 0.502, 0.082, 1.0f); // Verde
+        abcg::glUniform4f(m_colorLoc, 0.5f, 0.5f, 0.5f, 1.0f); // Cinza
       }
 
       abcg::glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
