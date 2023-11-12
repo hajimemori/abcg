@@ -1,7 +1,5 @@
 #include "ground.hpp"
 
-auto const boxSize = 1;
-
 void Ground::create(GLuint program) {
   // Unit quad on the xz plane
   std::array<glm::vec3, 4> vertices{{{-0.5f, 0.0f, +0.5f},
@@ -33,12 +31,12 @@ void Ground::create(GLuint program) {
   m_colorLoc = abcg::glGetUniformLocation(program, "color");
 }
 
-void Ground::paint() {
+void Ground::paint(float m_raio) {
   abcg::glBindVertexArray(m_VAO);
 
   // Draw a grid of 2N+1 x 2N+1 tiles on the xz plane, centered around the
   // origin
-  auto const N{3};
+  auto const N{5};
   for (auto const z : iter::range(-N, N + 1)) {
     for (auto const x : iter::range(-N, N + 1)) {
       // Set model matrix as a translation matrix
@@ -46,7 +44,7 @@ void Ground::paint() {
       model = glm::translate(model, glm::vec3(x, 0.0f, z));
       abcg::glUniformMatrix4fv(m_modelMatrixLoc, 1, GL_FALSE, &model[0][0]);
 
-      if (z < -boxSize || z > boxSize || x > boxSize || x < - boxSize){
+      if (z < -m_raio || z > m_raio || x > m_raio || x < - m_raio){
         abcg::glUniform4f(m_colorLoc,  0.212, 0.416, 0.922, 1.0f); // Azul
       }else{
         abcg::glUniform4f(m_colorLoc, 0.047, 0.502, 0.082, 1.0f); // Verde

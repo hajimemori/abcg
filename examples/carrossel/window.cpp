@@ -224,7 +224,7 @@ void Window::onPaint() {
   abcg::glBindVertexArray(0);
 
   // Draw ground
-  m_ground.paint();
+  m_ground.paint(m_raio);
 
   abcg::glUseProgram(0);
 }

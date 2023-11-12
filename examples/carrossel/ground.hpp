@@ -6,7 +6,7 @@
 class Ground {
 public:
   void create(GLuint program);
-  void paint();
+  void paint(float m_raio);
   void destroy();
 
 private:
