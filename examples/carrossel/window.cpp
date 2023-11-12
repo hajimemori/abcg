@@ -76,6 +76,7 @@ void Window::onCreate() {
   m_maxHeight = 0.5;
   m_uppingScale = 0.5;
   m_rotateSpeed = 0.05;
+  m_raio = 1.0;
 
   // Load model
   loadModelFromFile(assetsPath + "bunny.obj");
@@ -188,10 +189,9 @@ void Window::onPaint() {
   // Draw white bunny
   glm::mat4 model{1.0f};
 
-  m_angle = m_angle + (m_rotateSpeed / 100); 
-  float raio = 1;
-  float x = raio * cos(m_angle);
-  float z = raio * sin(m_angle);
+  m_angle = m_angle + (m_rotateSpeed / 100);
+  float x = m_raio * cos(m_angle);
+  float z = m_raio * sin(m_angle);
 
   if(m_height > m_maxHeight){
     m_upping = false;
@@ -232,7 +232,7 @@ void Window::onPaint() {
 void Window::onPaintUI() { 
   abcg::OpenGLWindow::onPaintUI(); 
   {
-    auto const widgetSize{ImVec2(330, 100)};
+    auto const widgetSize{ImVec2(330, 120)};
     ImGui::SetNextWindowPos(ImVec2(m_viewportSize.x - widgetSize.x - 5,
                                    m_viewportSize.y - widgetSize.y - 5));
     ImGui::SetNextWindowSize(widgetSize);
@@ -251,6 +251,10 @@ void Window::onPaintUI() {
 
     ImGui::PushItemWidth(140);
     ImGui::SliderFloat("Velocidade de rotacao", &m_rotateSpeed, 0.01, 0.10 , "%f" );
+    ImGui::PopItemWidth();
+
+    ImGui::PushItemWidth(140);
+    ImGui::SliderFloat("Raio de rotacao", &m_raio, 0.1, 2.0 , "%f" );
     ImGui::PopItemWidth();
 
     ImGui::End();
