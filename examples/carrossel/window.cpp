@@ -2,14 +2,6 @@
 
 #include <unordered_map>
 
-// Explicit specialization of std::hash for Vertex
-template <> struct std::hash<Vertex> {
-  size_t operator()(Vertex const &vertex) const noexcept {
-    auto const h1{std::hash<glm::vec3>()(vertex.position)};
-    return h1;
-  }
-};
-
 void Window::onEvent(SDL_Event const &event) {
   if (event.type == SDL_KEYDOWN) {
     if (event.key.keysym.sym == SDLK_UP || event.key.keysym.sym == SDLK_w)
@@ -56,118 +48,49 @@ void Window::onCreate() {
 
   // Create program
   m_program =
-      abcg::createOpenGLProgram({{.source = assetsPath + "carrossel.vert",
+      abcg::createOpenGLProgram({{.source = assetsPath + "shaders/texture.vert",
                                   .stage = abcg::ShaderStage::Vertex},
-                                 {.source = assetsPath + "carrossel.frag",
+                                 {.source = assetsPath + "shaders/texture.frag",
                                   .stage = abcg::ShaderStage::Fragment}});
-
-  m_ground.create(m_program);
 
   // Get location of uniform variables
   m_viewMatrixLocation = abcg::glGetUniformLocation(m_program, "viewMatrix");
   m_projMatrixLocation = abcg::glGetUniformLocation(m_program, "projMatrix");
   m_modelMatrixLocation = abcg::glGetUniformLocation(m_program, "modelMatrix");
-  m_colorLocation = abcg::glGetUniformLocation(m_program, "color");
+  // m_colorLocation = abcg::glGetUniformLocation(m_program, "color");
 
-// Inicializing variables
+  // Inicializing variables
   m_angle = 0.0;
   m_height = 0.0;
   m_upping = true;
   m_maxHeight = 0.5;
   m_uppingScale = 0.5;
   m_rotateSpeed = 0.05;
-  m_raio = 1.0;
+  m_raio = 0.8;
   m_angle_increase = 60.0f;
 
   // Load model
-  loadModelFromFile(assetsPath + "horse.obj");
+  loadModel(assetsPath + "horse.obj");
 
-  // Generate VBO
-  abcg::glGenBuffers(1, &m_VBO);
-  abcg::glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-  abcg::glBufferData(GL_ARRAY_BUFFER,
-                     sizeof(m_vertices.at(0)) * m_vertices.size(),
-                     m_vertices.data(), GL_STATIC_DRAW);
-  abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  // Generate EBO
-  abcg::glGenBuffers(1, &m_EBO);
-  abcg::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-  abcg::glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                     sizeof(m_indices.at(0)) * m_indices.size(),
-                     m_indices.data(), GL_STATIC_DRAW);
-  abcg::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-  // Create VAO
-  abcg::glGenVertexArrays(1, &m_VAO);
-
-  // Bind vertex attributes to current VAO
-  abcg::glBindVertexArray(m_VAO);
-
-  abcg::glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-  auto const positionAttribute{
-      abcg::glGetAttribLocation(m_program, "inPosition")};
-  abcg::glEnableVertexAttribArray(positionAttribute);
-  abcg::glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE,
-                              sizeof(Vertex), nullptr);
-  abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-  abcg::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-
-  // End of binding to current VAO
-  abcg::glBindVertexArray(0);
+  createSkybox();
 }
 
-void Window::loadModelFromFile(std::string_view path) {
-  tinyobj::ObjReader reader;
+void Window::loadModel(std::string_view path) {
+  auto const assetsPath{abcg::Application::getAssetsPath()};
 
-  if (!reader.ParseFromFile(path.data())) {
-    if (!reader.Error().empty()) {
-      throw abcg::RuntimeError(
-          fmt::format("Failed to load model {} ({})", path, reader.Error()));
-    }
-    throw abcg::RuntimeError(fmt::format("Failed to load model {}", path));
-  }
+  m_model.destroy();
 
-  if (!reader.Warning().empty()) {
-    fmt::print("Warning: {}\n", reader.Warning());
-  }
+  m_model.loadDiffuseTexture(assetsPath + "maps/oak_wood.jpg");
+  m_model.loadNormalTexture(assetsPath + "maps/oak_wood.jpg");
+  m_model.loadCubeTexture(assetsPath + "maps/cube/");
+  m_model.loadObj(path);
+  m_model.setupVAO(m_program);
 
-  auto const &attributes{reader.GetAttrib()};
-  auto const &shapes{reader.GetShapes()};
-
-  m_vertices.clear();
-  m_indices.clear();
-
-  // A key:value map with key=Vertex and value=index
-  std::unordered_map<Vertex, GLuint> hash{};
-
-  // Loop over shapes
-  for (auto const &shape : shapes) {
-    // Loop over indices
-    for (auto const offset : iter::range(shape.mesh.indices.size())) {
-      // Access to vertex
-      auto const index{shape.mesh.indices.at(offset)};
-
-      // Vertex position
-      auto const startIndex{3 * index.vertex_index};
-      auto const vx{attributes.vertices.at(startIndex + 0)};
-      auto const vy{attributes.vertices.at(startIndex + 1)};
-      auto const vz{attributes.vertices.at(startIndex + 2)};
-
-      Vertex const vertex{.position = {vx, vy, vz}};
-
-      // If map doesn't contain this vertex
-      if (!hash.contains(vertex)) {
-        // Add this index (size of m_vertices)
-        hash[vertex] = m_vertices.size();
-        // Add this vertex
-        m_vertices.push_back(vertex);
-      }
-
-      m_indices.push_back(hash[vertex]);
-    }
-  }
+  // Use material properties from the loaded model
+  m_Ka = m_model.getKa();
+  m_Kd = m_model.getKd();
+  m_Ks = m_model.getKs();
+  m_shininess = m_model.getShininess();
 }
 
 void Window::onPaint() {
@@ -178,15 +101,43 @@ void Window::onPaint() {
 
   abcg::glUseProgram(m_program);
 
-  // Set uniform variables for viewMatrix and projMatrix
-  // These matrices are used for every scene object
-  abcg::glUniformMatrix4fv(m_viewMatrixLocation, 1, GL_FALSE,
-                           &m_camera.getViewMatrix()[0][0]);
-  abcg::glUniformMatrix4fv(m_projMatrixLocation, 1, GL_FALSE,
-                           &m_camera.getProjMatrix()[0][0]);
+  auto const normalMatrixLoc{abcg::glGetUniformLocation(m_program, "normalMatrix")};
+  auto const lightDirLoc{abcg::glGetUniformLocation(m_program, "lightDirWorldSpace")};
+  auto const shininessLoc{abcg::glGetUniformLocation(m_program, "shininess")};
+  auto const IaLoc{abcg::glGetUniformLocation(m_program, "Ia")};
+  auto const IdLoc{abcg::glGetUniformLocation(m_program, "Id")};
+  auto const IsLoc{abcg::glGetUniformLocation(m_program, "Is")};
+  auto const KaLoc{abcg::glGetUniformLocation(m_program, "Ka")};
+  auto const KdLoc{abcg::glGetUniformLocation(m_program, "Kd")};
+  auto const KsLoc{abcg::glGetUniformLocation(m_program, "Ks")};
+  auto const diffuseTexLoc{abcg::glGetUniformLocation(m_program, "diffuseTex")};
+  auto const normalTexLoc{abcg::glGetUniformLocation(m_program, "normalTex")};
+  auto const cubeTexLoc{abcg::glGetUniformLocation(m_program, "cubeTex")};
 
-  abcg::glBindVertexArray(m_VAO);
+  abcg::glUniformMatrix4fv(m_viewMatrixLocation, 1, GL_FALSE, &m_camera.getViewMatrix()[0][0]);
+  abcg::glUniformMatrix4fv(m_projMatrixLocation, 1, GL_FALSE, &m_camera.getProjMatrix()[0][0]);
 
+  abcg::glUniform1i(diffuseTexLoc, 0);
+  abcg::glUniform1i(normalTexLoc, 1);
+  abcg::glUniform1i(cubeTexLoc, 2);
+
+  auto const lightDirRotated{m_lightDir};
+  abcg::glUniform4fv(lightDirLoc, 1, &lightDirRotated.x);
+  abcg::glUniform4fv(IaLoc, 1, &m_Ia.x);
+  abcg::glUniform4fv(IdLoc, 1, &m_Id.x);
+  abcg::glUniform4fv(IsLoc, 1, &m_Is.x);
+
+  // Set uniform variables for the current model
+  // abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &m_modelMatrix[0][0]);
+
+  auto const modelViewMatrix{glm::mat3(m_viewMatrix * m_modelMatrix)};
+  auto const normalMatrix{glm::inverseTranspose(modelViewMatrix)};
+  abcg::glUniformMatrix3fv(normalMatrixLoc, 1, GL_FALSE, &normalMatrix[0][0]);
+
+  abcg::glUniform4fv(KaLoc, 1, &m_Ka.x);
+  abcg::glUniform4fv(KdLoc, 1, &m_Kd.x);
+  abcg::glUniform4fv(KsLoc, 1, &m_Ks.x);
+  abcg::glUniform1f(shininessLoc, m_shininess);
 
   if(m_height > m_maxHeight){
     m_upping = false;
@@ -202,114 +153,18 @@ void Window::onPaint() {
     m_height -= (m_uppingScale / 1000);
   }
 
-  // Draw white horse
   m_angle = m_angle + (m_rotateSpeed / 100);
-  float x = m_raio * cos(m_angle);
-  float z = m_raio * sin(m_angle);
 
-  glm::mat4 model{1.0f};
-  model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(x, m_height, z));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
-  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
-  model = glm::scale(model, glm::vec3(0.01f));
-
-  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
-  abcg::glUniform4f(m_colorLocation, 1.0f, 1.0f, 1.0f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
-
-
-  // Draw pink horse
-  float m_angle2 = m_angle + glm::radians(m_angle_increase) + (m_rotateSpeed / 100);
-  x = m_raio * cos(m_angle2);
-  z = m_raio * sin(m_angle2);
-
-  model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(x, m_height, z));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
-  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
-  model = glm::scale(model, glm::vec3(0.01f));
-
-  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
-  abcg::glUniform4f(m_colorLocation, 1.0f, 0.0f, 0.682f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
-
-
-  // Draw yellow horse
-  float m_angle3 = m_angle + glm::radians(2*m_angle_increase) + (m_rotateSpeed / 100);
-  x = m_raio * cos(m_angle3);
-  z = m_raio * sin(m_angle3);
-
-  model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(x, m_height, z));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
-  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
-  model = glm::scale(model, glm::vec3(0.01f));
-
-  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
-  abcg::glUniform4f(m_colorLocation, 1.0f, 0.984f, 0.0f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
-
-
-  // Draw purple horse
-  float m_angle4 = m_angle + glm::radians(3*m_angle_increase) + (m_rotateSpeed / 100);
-  x = m_raio * cos(m_angle4);
-  z = m_raio * sin(m_angle4);
-
-  model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(x, m_height, z));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
-  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
-  model = glm::scale(model, glm::vec3(0.01f));
-
-  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
-  abcg::glUniform4f(m_colorLocation, 0.643f, 0.0f, 1.0f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
-
-
-  // Draw blue horse
-  float m_angle5 = m_angle + glm::radians(4*m_angle_increase) + (m_rotateSpeed / 100);
-  x = m_raio * cos(m_angle5);
-  z = m_raio * sin(m_angle5);
-
-  model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(x, m_height, z));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
-  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
-  model = glm::scale(model, glm::vec3(0.01f));
-
-  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
-  abcg::glUniform4f(m_colorLocation, 0.0f, 0.482f, 1.0f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
-
-
-  // Draw orange horse
-  float m_angle6 = m_angle + glm::radians(5*m_angle_increase) + (m_rotateSpeed / 100);
-  x = m_raio * cos(m_angle6);
-  z = m_raio * sin(m_angle6);
-
-  model = glm::mat4(1.0);
-  model = glm::translate(model, glm::vec3(x, m_height, z));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-  model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
-  model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
-  model = glm::scale(model, glm::vec3(0.01f));
-
-  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
-  abcg::glUniform4f(m_colorLocation, 1.0f, 0.486f, 0.0f, 1.0f);
-  abcg::glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT,  nullptr);
-
-  abcg::glBindVertexArray(0);
-
-  // Draw ground
-  m_ground.paint(m_raio);
+  renderHorse(m_angle, 1);
+  renderHorse(m_angle, 2);
+  renderHorse(m_angle, 3);
+  renderHorse(m_angle, 4);
+  renderHorse(m_angle, 5);
+  renderHorse(m_angle, 6);
 
   abcg::glUseProgram(0);
+
+  renderSkybox();
 }
 
 void Window::onPaintUI() {
@@ -350,12 +205,28 @@ void Window::onResize(glm::ivec2 const &size) {
 }
 
 void Window::onDestroy() {
-  m_ground.destroy();
-
+  m_model.destroy();
+  destroySkybox();
   abcg::glDeleteProgram(m_program);
-  abcg::glDeleteBuffers(1, &m_EBO);
-  abcg::glDeleteBuffers(1, &m_VBO);
-  abcg::glDeleteVertexArrays(1, &m_VAO);
+}
+
+void Window::renderHorse(float m_angle, int increase_int) {
+
+  // Draw horse
+  float new_angle = m_angle + glm::radians(increase_int*m_angle_increase) + (m_rotateSpeed / 100);
+  float x  = m_raio * cos(new_angle);
+  float z  = m_raio * sin(new_angle);
+
+  m_modelMatrix = glm::mat4(1.0);
+  m_modelMatrix = glm::translate(m_modelMatrix, glm::vec3(x, m_height, z));
+  m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+  m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(-90.0f), glm::vec3(0, 0, 1));
+  m_modelMatrix = glm::rotate(m_modelMatrix, atan2f(x,z), glm::vec3(0, 0, 1));
+  m_modelMatrix = glm::scale(m_modelMatrix, glm::vec3(0.3f));
+
+  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &m_modelMatrix[0][0]);
+  m_model.render();
+
 }
 
 void Window::onUpdate() {
@@ -365,4 +236,71 @@ void Window::onUpdate() {
   m_camera.dolly(m_dollySpeed * deltaTime);
   m_camera.truck(m_truckSpeed * deltaTime);
   m_camera.pan(m_panSpeed * deltaTime);
+}
+
+void Window::createSkybox() {
+  auto const assetsPath{abcg::Application::getAssetsPath()};
+
+  // Create skybox program
+  auto const path{assetsPath + "shaders/skybox"};
+  m_skyProgram = abcg::createOpenGLProgram(
+      {{.source = path + ".vert", .stage = abcg::ShaderStage::Vertex},
+       {.source = path + ".frag", .stage = abcg::ShaderStage::Fragment}});
+
+  // Generate VBO
+  abcg::glGenBuffers(1, &m_skyVBO);
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, m_skyVBO);
+  abcg::glBufferData(GL_ARRAY_BUFFER, sizeof(m_skyPositions), m_skyPositions.data(), GL_STATIC_DRAW);
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  // Get location of attributes in the program
+  auto const positionAttribute{abcg::glGetAttribLocation(m_skyProgram, "inPosition")};
+
+  // Create VAO
+  abcg::glGenVertexArrays(1, &m_skyVAO);
+
+  // Bind vertex attributes to current VAO
+  abcg::glBindVertexArray(m_skyVAO);
+
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, m_skyVBO);
+  abcg::glEnableVertexAttribArray(positionAttribute);
+  abcg::glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0,
+                              nullptr);
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  // End of binding to current VAO
+  abcg::glBindVertexArray(0);
+}
+
+void Window::renderSkybox() {
+  abcg::glUseProgram(m_skyProgram);
+
+  auto const viewMatrixLoc{abcg::glGetUniformLocation(m_skyProgram, "viewMatrix")};
+  auto const projMatrixLoc{abcg::glGetUniformLocation(m_skyProgram, "projMatrix")};
+  auto const skyTexLoc{abcg::glGetUniformLocation(m_skyProgram, "skyTex")};
+
+  abcg::glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, &m_camera.getViewMatrix()[0][0]);
+  abcg::glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, &m_camera.getProjMatrix()[0][0]);
+
+  abcg::glUniform1i(skyTexLoc, 0);
+
+  abcg::glBindVertexArray(m_skyVAO);
+
+  abcg::glActiveTexture(GL_TEXTURE0);
+  abcg::glBindTexture(GL_TEXTURE_CUBE_MAP, m_model.getCubeTexture());
+
+  abcg::glEnable(GL_CULL_FACE);
+  abcg::glFrontFace(GL_CW);
+  abcg::glDepthFunc(GL_LEQUAL);
+  abcg::glDrawArrays(GL_TRIANGLES, 0, m_skyPositions.size());
+  abcg::glDepthFunc(GL_LESS);
+
+  abcg::glBindVertexArray(0);
+  abcg::glUseProgram(0);
+}
+
+void Window::destroySkybox() const {
+  abcg::glDeleteProgram(m_skyProgram);
+  abcg::glDeleteBuffers(1, &m_skyVBO);
+  abcg::glDeleteVertexArrays(1, &m_skyVAO);
 }
