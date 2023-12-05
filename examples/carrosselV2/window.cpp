@@ -57,7 +57,6 @@ void Window::onCreate() {
   m_viewMatrixLocation = abcg::glGetUniformLocation(m_program, "viewMatrix");
   m_projMatrixLocation = abcg::glGetUniformLocation(m_program, "projMatrix");
   m_modelMatrixLocation = abcg::glGetUniformLocation(m_program, "modelMatrix");
-  // m_colorLocation = abcg::glGetUniformLocation(m_program, "color");
 
   // Inicializing variables
   m_angle = 0.0;
@@ -69,7 +68,7 @@ void Window::onCreate() {
   m_raio = 0.8;
   m_angle_increase = 60.0f;
 
-  // Load model
+  // Carrega o modelo em conjunto com as texturas que serão aplicadas
   loadModel(assetsPath + "horse.obj");
 
   createSkybox();
@@ -80,8 +79,7 @@ void Window::loadModel(std::string_view path) {
 
   m_model.destroy();
 
-  m_model.loadDiffuseTexture(assetsPath + "maps/oak_wood.jpg");
-  m_model.loadNormalTexture(assetsPath + "maps/oak_wood.jpg");
+  m_model.loadDiffuseTexture(assetsPath + "maps/oak_wood.jpg"); // Textura de madeira
   m_model.loadCubeTexture(assetsPath + "maps/cube/");
   m_model.loadObj(path);
   m_model.setupVAO(m_program);
@@ -111,24 +109,17 @@ void Window::onPaint() {
   auto const KdLoc{abcg::glGetUniformLocation(m_program, "Kd")};
   auto const KsLoc{abcg::glGetUniformLocation(m_program, "Ks")};
   auto const diffuseTexLoc{abcg::glGetUniformLocation(m_program, "diffuseTex")};
-  auto const normalTexLoc{abcg::glGetUniformLocation(m_program, "normalTex")};
-  auto const cubeTexLoc{abcg::glGetUniformLocation(m_program, "cubeTex")};
 
   abcg::glUniformMatrix4fv(m_viewMatrixLocation, 1, GL_FALSE, &m_camera.getViewMatrix()[0][0]);
   abcg::glUniformMatrix4fv(m_projMatrixLocation, 1, GL_FALSE, &m_camera.getProjMatrix()[0][0]);
 
   abcg::glUniform1i(diffuseTexLoc, 0);
-  abcg::glUniform1i(normalTexLoc, 1);
-  abcg::glUniform1i(cubeTexLoc, 2);
 
   auto const lightDirRotated{m_lightDir};
   abcg::glUniform4fv(lightDirLoc, 1, &lightDirRotated.x);
   abcg::glUniform4fv(IaLoc, 1, &m_Ia.x);
   abcg::glUniform4fv(IdLoc, 1, &m_Id.x);
   abcg::glUniform4fv(IsLoc, 1, &m_Is.x);
-
-  // Set uniform variables for the current model
-  // abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &m_modelMatrix[0][0]);
 
   auto const modelViewMatrix{glm::mat3(m_viewMatrix * m_modelMatrix)};
   auto const normalMatrix{glm::inverseTranspose(modelViewMatrix)};
@@ -210,6 +201,7 @@ void Window::onDestroy() {
   abcg::glDeleteProgram(m_program);
 }
 
+// Método utilizado para renderizar e atualizar a posicao de um cavalo
 void Window::renderHorse(float m_angle, int increase_int) {
 
   // Draw horse
@@ -238,6 +230,7 @@ void Window::onUpdate() {
   m_camera.pan(m_panSpeed * deltaTime);
 }
 
+// Método utilizado para criar o cubo que simula o ambiente de campo aberto
 void Window::createSkybox() {
   auto const assetsPath{abcg::Application::getAssetsPath()};
 
@@ -272,6 +265,7 @@ void Window::createSkybox() {
   abcg::glBindVertexArray(0);
 }
 
+// Método utilizado para renderizar o cubo que simula o ambiente
 void Window::renderSkybox() {
   abcg::glUseProgram(m_skyProgram);
 

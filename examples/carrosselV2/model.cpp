@@ -146,14 +146,6 @@ void Model::loadDiffuseTexture(std::string_view path) {
   m_diffuseTexture = abcg::loadOpenGLTexture({.path = path});
 }
 
-void Model::loadNormalTexture(std::string_view path) {
-  if (!std::filesystem::exists(path))
-    return;
-
-  abcg::glDeleteTextures(1, &m_normalTexture);
-  m_normalTexture = abcg::loadOpenGLTexture({.path = path});
-}
-
 void Model::loadObj(std::string_view path, bool standardize) {
   auto const basePath{std::filesystem::path{path}.parent_path().string() + "/"};
 
@@ -241,20 +233,16 @@ void Model::loadObj(std::string_view path, bool standardize) {
     m_Ks = {mat.specular[0], mat.specular[1], mat.specular[2], 1};
     m_shininess = mat.shininess;
 
-    if (!mat.diffuse_texname.empty())
+    if (!mat.diffuse_texname.empty()){
       loadDiffuseTexture(basePath + mat.diffuse_texname);
-
-    if (!mat.normal_texname.empty()) {
-      loadNormalTexture(basePath + mat.normal_texname);
-    } else if (!mat.bump_texname.empty()) {
-      loadNormalTexture(basePath + mat.bump_texname);
     }
+
   } else {
     // Default values
     m_Ka = {0.1f, 0.1f, 0.1f, 1.0f};
     m_Kd = {0.7f, 0.7f, 0.7f, 1.0f};
     m_Ks = {1.0f, 1.0f, 1.0f, 1.0f};
-    m_shininess = 25.0f;
+    m_shininess = 80.0f;
   }
 
   if (standardize) {
@@ -277,9 +265,6 @@ void Model::render() const {
 
   abcg::glActiveTexture(GL_TEXTURE0);
   abcg::glBindTexture(GL_TEXTURE_2D, m_diffuseTexture);
-
-  abcg::glActiveTexture(GL_TEXTURE1);
-  abcg::glBindTexture(GL_TEXTURE_2D, m_normalTexture);
 
   abcg::glActiveTexture(GL_TEXTURE2);
   abcg::glBindTexture(GL_TEXTURE_CUBE_MAP, m_cubeTexture);
@@ -373,7 +358,6 @@ void Model::standardize() {
 
 void Model::destroy() {
   abcg::glDeleteTextures(1, &m_cubeTexture);
-  abcg::glDeleteTextures(1, &m_normalTexture);
   abcg::glDeleteTextures(1, &m_diffuseTexture);
   abcg::glDeleteBuffers(1, &m_EBO);
   abcg::glDeleteBuffers(1, &m_VBO);

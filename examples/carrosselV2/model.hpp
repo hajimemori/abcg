@@ -45,7 +45,6 @@ private:
   glm::vec4 m_Ks{};
   float m_shininess{};
   GLuint m_diffuseTexture{};
-  GLuint m_normalTexture{};
   GLuint m_cubeTexture{};
 
   std::vector<Vertex> m_vertices;
