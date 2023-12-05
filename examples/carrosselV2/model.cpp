@@ -20,7 +20,7 @@ void Model::computeNormals() {
   }
 
   // Compute face normals
-  for (auto const offset : iter::range(0UL, m_indices.size(), 3UL)) {
+  for (auto const offset : iter::range((unsigned long)0UL, m_indices.size(), 3UL)) {
     // Get face vertices
     auto &a{m_vertices.at(m_indices.at(offset + 0))};
     auto &b{m_vertices.at(m_indices.at(offset + 1))};
