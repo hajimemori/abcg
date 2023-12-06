@@ -50,7 +50,7 @@ void Model::computeTangents() {
   std::vector bitangents(m_vertices.size(), glm::vec3(0));
 
   // Compute face tangents and bitangents
-  for (auto const offset : iter::range(0UL, m_indices.size(), 3UL)) {
+  for (auto const offset : iter::range((unsigned long)0UL, (unsigned long)m_indices.size(), (unsigned long)3UL)) {
     // Get face indices
     auto const i1{m_indices.at(offset + 0)};
     auto const i2{m_indices.at(offset + 1)};
