@@ -7,146 +7,107 @@
 
 ## Descrição 
 
-Este projeto foi baseado na atividade LookAt e tem como principal objetivo a simulação de um brinquedo infantil conhecido como Carrossel.
-O brinquedo consiste repetidos modelos que giram em circulos por um circuito sobe e desce de forma uniforme até uma altura máxima.
+Este projeto foi baseado na atividade anterior: Carrossel. Incrementando a ideia utilizando texturas.
 
 ***
-## Alteração dinamica de variáveis
+## Renderização dos Cavalos 
 
-Criamos alterações para que algumas variáveis sejam possíveis de serem alteradas conforme a vontade do usuário. Para isso utilizamos um Slider na função onPaintUI() e a função ficou da seguinte forma:
+No método abaixo é utilizado para carregar o modelo:
 ```
-void Window::onPaintUI() {
-  abcg::OpenGLWindow::onPaintUI();
-  {
-    auto const widgetSize{ImVec2(330, 120)};
-    ImGui::SetNextWindowPos(ImVec2(m_viewportSize.x - widgetSize.x - 5,
-                                   m_viewportSize.y - widgetSize.y - 5));
-    ImGui::SetNextWindowSize(widgetSize);
-    auto const windowFlags{ImGuiWindowFlags_NoResize |
-                           ImGuiWindowFlags_NoCollapse |
-                           ImGuiWindowFlags_NoTitleBar};
-    ImGui::Begin(" ", nullptr, windowFlags);
+void Window::loadModel(std::string_view path) {
+  auto const assetsPath{abcg::Application::getAssetsPath()};
 
-    ImGui::PushItemWidth(140);
-    ImGui::SliderFloat("Velocidade de subida", &m_uppingScale, 0.1, 1.0 , "%f" );
-    ImGui::PopItemWidth();
+  m_model.destroy();
 
-    ImGui::PushItemWidth(140);
-    ImGui::SliderFloat("Altura maxima", &m_maxHeight, 0.0, 1.0 , "%f" );
-    ImGui::PopItemWidth();
-
-    ImGui::PushItemWidth(140);
-    ImGui::SliderFloat("Velocidade de rotacao", &m_rotateSpeed, 0.01, 0.10 , "%f" );
-    ImGui::PopItemWidth();
-
-    ImGui::PushItemWidth(140);
-    ImGui::SliderFloat("Raio de rotacao", &m_raio, 0.1, 2.0 , "%f" );
-    ImGui::PopItemWidth();
-
-    ImGui::End();
-  }
- }
-```
-
-Neste cógido temos alguns Sliders. O primeiro é o seguinte:
-```
-    ImGui::PushItemWidth(140);
-    ImGui::SliderFloat("Velocidade de subida", &m_uppingScale, 0.1, 1.0 , "%f" );
-    ImGui::PopItemWidth();
-```
-E nesse Slide controlamos a variável m_uppingScale que é utilizada para controlar a velocida do movimento vertical realizado pelo modelo. Podemos notar tambem, que para fins de facilitar o valor desta variável para o usuário, em todos os momentos em que é utilizado esta variável dividimos o valor por 1000.
-
-Em seguida temos o seguinte Slider:
-```
-    ImGui::PushItemWidth(140);
-    ImGui::SliderFloat("Altura maxima", &m_maxHeight, 0.0, 1.0 , "%f" );
-    ImGui::PopItemWidth();
-```
-No qual podemos controlar a altura máxima da movimentação vertical do modelo.
-
-O proximo Slider é utilizado para controlar a velocidade de rotação horizontal do modelo. Podemos notar que, assim como a variável de velocidade vertical do modelo, a fim melhorar a usabilidade do usuário, o seu valor tambem é divido por 100 antes de sua utilização e seu código esta descrito como:
-
-```
-    ImGui::PushItemWidth(140);
-    ImGui::SliderFloat("Velocidade de rotacao", &m_rotateSpeed, 0.01, 0.10 , "%f" );
-    ImGui::PopItemWidth();
-```
-
-E por fim temos o Slider que controla a variável de raio de rotação do modelo que esta descrito como:
-
-```
-    ImGui::PushItemWidth(140);
-    ImGui::SliderFloat("Raio de rotacao", &m_raio, 0.1, 2.0 , "%f" );
-    ImGui::PopItemWidth();
-```
-
-
-
-## Movimentação circular do modelo
-
-Para realizar a movimentação do modelo utilizamos uma função baseado em seno e cosseno para encontrar a posição de x e y com base no angulo em que o modelo está:
-
-* x = raio * cos(angulo)
-* y = raio * seno(angulo)
-
-Para cada modelo desenhado na cena o angulo inicial é acrescido em 60˚, como são 6 modelos temos os 360˚ preenchidos.
-
-Para isto, em código, alteramos na função onPaint() para realizar as equações acima e gravar em variaveis que serão passadas como parametro na função glm::translate:
-
-```
-  float x = m_raio * cos(m_angle);
-  float z = m_raio * sin(m_angle);
-
-  .
-  .
-  .
-
-  model = glm::translate(model, glm::vec3(x, m_height, z));
-  ```
-
-## Movimentação vertical do modelo
-
-Para realização do movimento vertical do modelo, inicialmente checamos se a altura do modelo alcançou o valor máximo (utilizando a valor selecionado pelo usuário) ou o valor mínimo (zero), e em seguida caso o modelo esteja subindo somamos o valor da variavel de velocidade vertical do modelo na variável que guarda o valor da altura. E caso o modelo nao esteja subido, subtraimos este valor. E em seguida passamos esse valor na função glm::translate, para atribuir a altura no vec3. Utilizando o seguinte código:
-
-```
-if(m_height > m_maxHeight){
-    m_upping = false;
-  }
-  if(m_height <= 0){
-    m_upping = true;
-  }
-
-  if(m_upping){
-    m_height += (m_uppingScale / 1000);
-  }
-  else{
-    m_height -= (m_uppingScale / 1000);
-  }
-
-  model = glm::translate(model, glm::vec3(x, m_height, z));
-
-```
-
-## Rotação em torno do proprio eixo do modelo
-
-Para dar a impressão de um carrossel, devemos fazer uma rotação do modelo em torno do proprio eixo para que ele sempre esteja apontando para frente enquanto realiza a rotação do carrossel. Para isso utilizamos a função de arco tangente já existente no c++, e passamos como parametro da funçao glm::rotate do modelo utilizando o código abaixo:
-
-```
-model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1, 0, 0));
-model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0, 0, 1));
-model = glm::rotate(model, atan2f(x,z), glm::vec3(0, 0, 1));
-```
-
-## Desenho do chão
-
-Para dar um efeito de base para o carrossel, o chão é colorido de cinza com o tamanho suficiente para comportar o raio de rotacao, a demais área foi colorida de verde para um efeito de grama.
-
-```
-if (z < -m_raio || z > m_raio || x > m_raio || x < - m_raio){
-  abcg::glUniform4f(m_colorLoc,  0.047, 0.502, 0.082, 1.0f); // Verde
-}else{
-  abcg::glUniform4f(m_colorLoc, 0.5f, 0.5f, 0.5f, 1.0f); // Cinza
+  m_model.loadDiffuseTexture(assetsPath + "maps/oak_wood.jpg");
+  m_model.loadNormalTexture(assetsPath + "maps/oak_wood.jpg");
+  m_model.loadCubeTexture(assetsPath + "maps/cube/");
+  m_model.loadObj(path);
+  m_model.setupVAO(m_program);
+  // Use material properties from the loaded model
+  m_Ka = m_model.getKa();
+  m_Kd = m_model.getKd();
+  m_Ks = m_model.getKs();
+  m_shininess = m_model.getShininess();
 }
 ```
+Note que neste ponto é onde mostra que estamos utilizando *Textura Difusa*. 
+
+
+E já no método abaixo é utilizado para renderização e posição do calvalo 
+```
+void Window::renderHorse(float m_angle, int increase_int) {
+
+  // Draw horse
+  float new_angle = m_angle + glm::radians(increase_int*m_angle_increase) + (m_rotateSpeed / 100);
+  float x  = m_raio * cos(new_angle);
+  float z  = m_raio * sin(new_angle);
+  m_modelMatrix = glm::mat4(1.0);
+  m_modelMatrix = glm::translate(m_modelMatrix, glm::vec3(x, m_height, z));
+  m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+  m_modelMatrix = glm::rotate(m_modelMatrix, glm::radians(-90.0f), glm::vec3(0, 0, 1));
+  m_modelMatrix = glm::rotate(m_modelMatrix, atan2f(x,z), glm::vec3(0, 0, 1));
+  m_modelMatrix = glm::scale(m_modelMatrix, glm::vec3(0.3f));
+  abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &m_modelMatrix[0][0]);
+  m_model.render();
+}
+```
+
+
+
+## Skybox 
+
+O método abaixo é o método utilizado para criar o cubo que sera utilizado como skybox que simula o ambiente de campo aberto: 
+```
+void Window::createSkybox() {
+  auto const assetsPath{abcg::Application::getAssetsPath()};
+
+  // Create skybox program
+  auto const path{assetsPath + "shaders/skybox"};
+  m_skyProgram = abcg::createOpenGLProgram(
+      {{.source = path + ".vert", .stage = abcg::ShaderStage::Vertex},
+       {.source = path + ".frag", .stage = abcg::ShaderStage::Fragment}});
+  // Generate VBO
+  abcg::glGenBuffers(1, &m_skyVBO);
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, m_skyVBO);
+  abcg::glBufferData(GL_ARRAY_BUFFER, sizeof(m_skyPositions), m_skyPositions.data(), GL_STATIC_DRAW);
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
+  // Get location of attributes in the program
+  auto const positionAttribute{abcg::glGetAttribLocation(m_skyProgram, "inPosition")};
+  // Create VAO
+  abcg::glGenVertexArrays(1, &m_skyVAO);
+  // Bind vertex attributes to current VAO
+  abcg::glBindVertexArray(m_skyVAO);
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, m_skyVBO);
+  abcg::glEnableVertexAttribArray(positionAttribute);
+  abcg::glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE, 0,
+                              nullptr);
+  abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
+  // End of binding to current VAO
+  abcg::glBindVertexArray(0);
+}
+``` 
+E o método seguinte é utilizado para a renderização da skybox acima: 
+```
+void Window::renderSkybox() {
+  abcg::glUseProgram(m_skyProgram);
+
+  auto const viewMatrixLoc{abcg::glGetUniformLocation(m_skyProgram, "viewMatrix")};
+  auto const projMatrixLoc{abcg::glGetUniformLocation(m_skyProgram, "projMatrix")};
+  auto const skyTexLoc{abcg::glGetUniformLocation(m_skyProgram, "skyTex")};
+  abcg::glUniformMatrix4fv(viewMatrixLoc, 1, GL_FALSE, &m_camera.getViewMatrix()[0][0]);
+  abcg::glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, &m_camera.getProjMatrix()[0][0]);
+  abcg::glUniform1i(skyTexLoc, 0);
+  abcg::glBindVertexArray(m_skyVAO);
+  abcg::glActiveTexture(GL_TEXTURE0);
+  abcg::glBindTexture(GL_TEXTURE_CUBE_MAP, m_model.getCubeTexture());
+  abcg::glEnable(GL_CULL_FACE);
+  abcg::glFrontFace(GL_CW);
+  abcg::glDepthFunc(GL_LEQUAL);
+  abcg::glDrawArrays(GL_TRIANGLES, 0, m_skyPositions.size());
+abcg::glDepthFunc(GL_LESS);
+```
+
+
 
 
